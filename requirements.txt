@@ -6,3 +6,5 @@ werkzeug
 pytest
 flask_bcrypt
 flask_login
+flask-migrate
+email_validator

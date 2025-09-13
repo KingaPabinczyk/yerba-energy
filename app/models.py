@@ -18,8 +18,36 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), default="user")  # "user" lub "admin"
 
+    first_name = db.Column(db.String(100), nullable=True)
+    last_name = db.Column(db.String(100), nullable=True)
+    street = db.Column(db.String(120), nullable=True)
+    house_number = db.Column(db.String(20), nullable=True)
+    postal_code = db.Column(db.String(20), nullable=True)
+    city = db.Column(db.String(80), nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    total = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default="nowe")  # np. nowe, w realizacji, wysłane
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    user = db.relationship("User", backref="orders")
+
+
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)  # cena jednostkowa w momencie zakupu
+
+    order = db.relationship("Order", backref="items")
+    product = db.relationship("Product")

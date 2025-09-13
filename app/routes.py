@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
-from .models import Product, User, db
+from .models import Product, User, db, Order
 from .forms import ProductForm, LoginForm, RegisterForm
 import os
 from werkzeug.utils import secure_filename
@@ -25,9 +25,6 @@ def index():
         cart=cart,
         selected_category=category
     )
-
-
-
 
 @bp.route("/product/<int:product_id>")
 def product_detail(product_id):
@@ -130,13 +127,26 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if User.query.filter_by(username=form.username.data).first():
-            flash("Użytkownik już istnieje!", "danger")
+            flash("Użytkownik o takim loginie już istnieje!", "danger")
             return redirect(url_for("main.register"))
 
-        new_user = User(username=form.username.data)
+        if User.query.filter_by(email=form.email.data).first():
+            flash("Adres e-mail jest już używany!", "danger")
+            return redirect(url_for("main.register"))
+
+        new_user = User(
+            username=form.username.data,
+            email=form.email.data,
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            street=form.street.data,
+            house_number=form.house_number.data,
+            postal_code=form.postal_code.data,
+            city=form.city.data,
+        )
         new_user.set_password(form.password.data)
 
-        # automatyczne ustawienie admina jeśli login to admin/admin
+        # Admin tylko gdy login = admin i hasło = admin
         if form.username.data == "admin" and form.password.data == "admin":
             new_user.role = "admin"
 
@@ -245,3 +255,108 @@ def clear_cart():
     session["cart"] = {}
     flash("Koszyk został opróżniony.", "info")
     return redirect(url_for("main.cart"))
+
+@bp.route("/place_order", methods=["POST"])
+def place_order():
+    if "user_id" not in session:
+        flash("Musisz być zalogowany, aby złożyć zamówienie.", "danger")
+        return redirect(url_for("main.login"))
+
+    cart = session.get("cart", {})
+    if not cart:
+        flash("Koszyk jest pusty.", "warning")
+        return redirect(url_for("main.cart"))
+
+    user_id = session["user_id"]
+
+    # Pobieramy produkty
+    product_ids = [int(pid) for pid in cart.keys()]
+    products = Product.query.filter(Product.id.in_(product_ids)).all()
+
+    total = 0
+    order = Order(user_id=user_id, total=0)
+    db.session.add(order)
+    db.session.flush()  # dostajemy ID zamówienia przed commit
+
+    for product in products:
+        qty = cart[str(product.id)]
+        subtotal = qty * product.price
+        total += subtotal
+        item = OrderItem(
+            order_id=order.id,
+            product_id=product.id,
+            quantity=qty,
+            price=product.price
+        )
+        db.session.add(item)
+
+    order.total = total
+    db.session.commit()
+
+    # Czyścimy koszyk
+    session["cart"] = {}
+
+    flash("Zamówienie zostało złożone!", "success")
+    return redirect(url_for("main.my_orders"))
+
+@bp.route("/orders")
+def orders():
+    if "user_id" not in session:
+        flash("Zaloguj się, aby zobaczyć zamówienia.", "danger")
+        return redirect(url_for("main.login"))
+
+    if session.get("role") == "admin":
+        orders = Order.query.order_by(Order.created_at.desc()).all()
+    else:
+        orders = Order.query.filter_by(user_id=session["user_id"]).order_by(Order.created_at.desc()).all()
+
+    return render_template("orders.html", orders=orders)
+
+@bp.route("/users")
+def users():
+    if "user_id" not in session:
+        flash("Zaloguj się, aby zobaczyć użytkowników.", "danger")
+        return redirect(url_for("main.login"))
+
+    if session.get("role") != "admin":
+        flash("Nie masz uprawnień do podglądu użytkowników.", "danger")
+        return redirect(url_for("main.index"))
+
+    users = User.query.order_by(User.id.asc()).all()
+    return render_template("users.html", users=users)
+
+@bp.route("/users/delete/<int:user_id>", methods=["POST"])
+def delete_user(user_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Brak uprawnień!", "danger")
+        return redirect(url_for("main.index"))
+
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash("Użytkownik został usunięty.", "info")
+    return redirect(url_for("main.users"))
+
+
+# (opcjonalnie) edycja użytkownika
+@bp.route("/users/edit/<int:user_id>", methods=["GET", "POST"])
+def edit_user(user_id):
+    if "user_id" not in session or session.get("role") != "admin":
+        flash("Brak uprawnień!", "danger")
+        return redirect(url_for("main.index"))
+
+    user = User.query.get_or_404(user_id)
+    # tutaj można wykorzystać `RegisterForm` albo zrobić osobny `UserForm`
+    if request.method == "POST":
+        user.first_name = request.form.get("first_name")
+        user.last_name = request.form.get("last_name")
+        user.email = request.form.get("email")
+        user.street = request.form.get("street")
+        user.house_number = request.form.get("house_number")
+        user.postal_code = request.form.get("postal_code")
+        user.city = request.form.get("city")
+        db.session.commit()
+        flash("Użytkownik zaktualizowany!", "success")
+        return redirect(url_for("main.users"))
+
+    return render_template("edit_user.html", user=user)
