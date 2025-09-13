@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-4 ">
+
+    <!-- Górna sekcja: zdjęcie + informacje -->
+    <div class="row">
+        <!-- Zdjęcie -->
+        <div class="col-md-6 text-center">
+            <img src="{{ product.image_url }}" class="img-fluid rounded shadow-sm" alt="{{ product.name }}">
+
+        </div>
+
+        <!-- Dane produktu -->
+        <div class="col-md-6 d-flex flex-column justify-content-center">
+            <h2 class="fw-bold">{{ product.name }}</h2>
+            <h4 class="text-success mb-3">{{ "%.2f"|format(product.price) }} zł</h4>
+            <p><strong>Kategoria:</strong> {{ product.category or "Brak" }}</p>
+            <p style="white-space: pre-line;">{{ product.description or "Brak opisu" }}</p>
+
+            <!-- Przyciski zależne od roli -->
+            <div class="mt-4">
+                {% if session.get("role") == "admin" %}
+                    <a href="{{ url_for('main.edit_product', product_id=product.id) }}" class="btn btn-warning me-2">Edytuj</a>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDelete{{ product.id }}">Usuń</button>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="confirmDelete{{ product.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Potwierdzenie</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Czy na pewno chcesz usunąć produkt <b>{{ product.name }}</b>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                                    <form method="post" action="{{ url_for('main.delete_product', product_id=product.id) }}">
+                                        <button type="submit" class="btn btn-danger">Usuń</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    {% if session.get("cart", {}).get(product.id|string) %}
+                        <form method="POST" action="{{ url_for('main.update_cart', product_id=product.id) }}" class="d-flex justify-content-center cart-add">
+                            <div class="btn-group w-100">
+                            <button type="submit" name="action" value="decrease" class="btn btn-outline-danger">−</button>
+                            <span class="btn btn-light fw-bold disabled">{{ session["cart"][product.id|string] }}</span>
+                            <button type="submit" name="action" value="increase" class="btn btn-outline-success">+</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('main.add_to_cart', product_id=product.id) }}" class="cart-add">
+                            <button type="submit" class="btn btn-success w-100 rounded-pill">Dodaj do koszyka</button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <hr class="my-4">
+
+    <!-- Sposób przygotowania -->
+    <div class="mb-4">
+        <h4 class="fw-bold">Sposób przygotowania</h4>
+        <p style="white-space: pre-line;">{{ product.preparation or "Brak informacji" }}</p>
+    </div>
+
+    <!-- Właściwości -->
+    <div class="margin-b">
+        <h4 class="fw-bold">Właściwości</h4>
+        {% if product.properties %}
+        <ul>
+            {% for prop in product.properties.split('\n') %}
+                {% if prop.strip() %}
+                    <li>{{ prop }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p>Brak informacji</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

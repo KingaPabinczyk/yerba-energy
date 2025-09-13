@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">🛒 Twój koszyk</h2>
+
+{% if products %}
+<div class="table-responsive">
+  <table class="table cart-table table-bordered align-middle shadow-sm bg-white">
+    <thead class="table-dark">
+      <tr>
+        <th>Produkt</th>
+        <th>Cena</th>
+        <th>Ilość</th>
+        <th>Suma</th>
+        <th>Akcje</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in products %}
+      <tr>
+        <td>
+          <a href="{{ url_for('main.product_detail', product_id=item.product.id) }}" class="text-decoration-none">
+            {{ item.product.name }}
+          </a>
+        </td>
+        <td>{{ "%.2f"|format(item.product.price) }} zł</td>
+        <td>
+          <form method="post" action="{{ url_for('main.update_cart', product_id=item.product.id) }}" class="d-inline-flex align-items-center">
+            <button type="submit" name="action" value="decrease" class="btn btn-sm btn-outline-danger">−</button>
+            <span class="px-2 py-1 border rounded bg-light fw-bold">{{ item.qty }}</span>
+            <button type="submit" name="action" value="increase" class="btn btn-sm btn-outline-success">+</button>
+          </form>
+        </td>
+        <td class="fw-bold">{{ "%.2f"|format(item.subtotal) }} zł</td>
+        <td>
+          <form method="post" action="{{ url_for('main.remove_from_cart', product_id=item.product.id) }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">🗑️ Usuń</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      <tr class="table-secondary">
+        <td colspan="4" class="text-end fw-bold">Razem:</td>
+        <td class="fw-bold">{{ "%.2f"|format(total) }} zł</td>
+
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+  <form method="post" action="{{ url_for('main.clear_cart') }}">
+  <button type="submit" class="btn btn-outline-danger">🗑️ Opróżnij koszyk</button>
+</form>
+
+  <button class="btn btn-success">✅ Złóż zamówienie</button>
+</div>
+
+{% else %}
+<p class="text-muted">Koszyk jest pusty.</p>
+{% endif %}
+{% endblock %}

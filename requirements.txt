@@ -1,0 +1,8 @@
+flask
+flask_sqlalchemy
+flask_wtf
+wtforms
+werkzeug
+pytest
+flask_bcrypt
+flask_login
