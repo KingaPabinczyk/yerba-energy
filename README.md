@@ -58,16 +58,24 @@ http://127.0.0.1:5000
 ## Struktura projektu
 
 -app/
+
 -- static/ # pliki statyczne (obrazy)
+
 -- templates/ # szablony Jinja2
+
 -- forms.py # definicje formularzy Flask-WTF
+
 -- models.py # definicje modeli SQLAlchemy
+
 -- routes.py # widoki i logika aplikacji
 
 -data/
+
 -- mini_shop.db # plik z bazą SQLite
 
 -Dockerfile
+
 -requirements.txt
+
 -run.py # punkt startowy aplikacji
 
