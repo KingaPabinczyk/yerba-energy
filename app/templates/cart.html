@@ -1,61 +1,88 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4">🛒 Twój koszyk</h2>
 
-{% if products %}
-<div class="table-responsive">
-  <table class="table cart-table table-bordered align-middle shadow-sm bg-white">
-    <thead class="table-dark">
-      <tr>
-        <th>Produkt</th>
-        <th>Cena</th>
-        <th>Ilość</th>
-        <th>Suma</th>
-        <th>Akcje</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in products %}
-      <tr>
-        <td>
-          <a href="{{ url_for('main.product_detail', product_id=item.product.id) }}" class="text-decoration-none">
-            {{ item.product.name }}
-          </a>
-        </td>
-        <td>{{ "%.2f"|format(item.product.price) }} zł</td>
-        <td>
-          <form method="post" action="{{ url_for('main.update_cart', product_id=item.product.id) }}" class="d-inline-flex align-items-center">
-            <button type="submit" name="action" value="decrease" class="btn btn-sm btn-outline-danger">−</button>
-            <span class="px-2 py-1 border rounded bg-light fw-bold">{{ item.qty }}</span>
-            <button type="submit" name="action" value="increase" class="btn btn-sm btn-outline-success">+</button>
-          </form>
-        </td>
-        <td class="fw-bold">{{ "%.2f"|format(item.subtotal) }} zł</td>
-        <td>
-          <form method="post" action="{{ url_for('main.remove_from_cart', product_id=item.product.id) }}">
-            <button type="submit" class="btn btn-sm btn-outline-secondary">🗑️ Usuń</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-      <tr class="table-secondary">
-        <td colspan="4" class="text-end fw-bold">Razem:</td>
-        <td class="fw-bold">{{ "%.2f"|format(total) }} zł</td>
-
-      </tr>
-    </tbody>
-  </table>
+<div class="text-center my-5">
+  <h3 class="fw-bold display-6">🛒 Twój koszyk</h3>
 </div>
 
-<div class="mt-3 d-flex gap-2">
-  <form method="post" action="{{ url_for('main.clear_cart') }}">
-  <button type="submit" class="btn btn-outline-danger">🗑️ Opróżnij koszyk</button>
-</form>
+{% if products %}
+<div class="container mb-5">
 
-  <button class="btn btn-success">✅ Złóż zamówienie</button>
+  <!-- Lista produktów w koszyku -->
+  <div class="list-group shadow-sm rounded mb-4">
+    {% for item in products %}
+    <div class="list-group-item bg-white d-flex align-items-center justify-content-between py-3">
+
+      <!-- Produkt -->
+      <div class="d-flex align-items-center flex-grow-1">
+        <a href="{{ url_for('main.product_detail', product_id=item.product.id) }}" class="me-3">
+          {% if item.product.image_url %}
+            <img src="{{ item.product.image_url }}" class="rounded shadow-sm" style="width:60px; height:60px; object-fit:cover;" alt="{{ item.product.name }}">
+          {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="width:60px; height:60px;">
+              <span class="text-muted small">Brak<br>zdjęcia</span>
+            </div>
+          {% endif %}
+        </a>
+        <div>
+          <a href="{{ url_for('main.product_detail', product_id=item.product.id) }}" 
+             class="fw-bold text-dark text-decoration-none">{{ item.product.name }}</a>
+          <div class="text-success small">{{ "%.2f"|format(item.product.price) }} zł / szt.</div>
+        </div>
+      </div>
+
+      <!-- Ilość -->
+      <div class="text-center mx-3" style="min-width: 120px;">
+        <form method="post" action="{{ url_for('main.update_cart', product_id=item.product.id) }}">
+          <div class="btn-group btn-group-sm">
+            <button type="submit" name="action" value="decrease" class="btn btn-outline-danger">−</button>
+            <span class="btn btn-light fw-bold disabled">{{ item.qty }}</span>
+            <button type="submit" name="action" value="increase" class="btn btn-outline-success">+</button>
+          </div>
+        </form>
+      </div>
+
+
+      <!-- Suma -->
+      <div class="fw-bold mx-3 d-none d-md-block" style="min-width: 90px; text-align: right;">
+        {{ "%.2f"|format(item.subtotal) }} zł
+      </div>
+
+      <!-- Usuń -->
+      <div>
+        <form method="post" action="{{ url_for('main.remove_from_cart', product_id=item.product.id) }}">
+          <button type="submit" class="btn btn-sm btn-outline-secondary">🗑️</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Podsumowanie -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 fw-bold">Razem:</h5>
+      <h5 class="mb-0 text-success fw-bold">{{ "%.2f"|format(total) }} zł</h5>
+    </div>
+  </div>
+
+  <!-- Akcje -->
+  <div class="d-flex justify-content-between mt-4">
+    <form method="post" action="{{ url_for('main.clear_cart') }}">
+      <button type="submit" class="btn btn-outline-danger">🗑️ Opróżnij koszyk</button>
+    </form>
+    <a href="{{ url_for('main.checkout_delivery') }}" class="btn btn-success">
+      ✅ Złóż zamówienie
+    </a>
+  </div>
+
 </div>
 
 {% else %}
-<p class="text-muted">Koszyk jest pusty.</p>
+<div class="text-center my-5">
+  <p class="text-muted fs-5">Twój koszyk jest pusty 😢</p>
+  <a href="{{ url_for('main.index') }}" class="btn btn-outline-success mt-3">🛍️ Wróć do zakupów</a>
+</div>
 {% endif %}
+
 {% endblock %}

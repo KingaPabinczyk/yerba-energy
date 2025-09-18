@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center my-4">
+  <h3 class="fw-bold">✅ Zamówienie nr {{ order.id }} zostało złożone</h3>
+</div>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+
+    <div class="alert alert-success text-center">
+      Status: {{ order.status }}
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">Dostawa</div>
+      <div class="card-body">
+        {{ "Kurier – 14 zł" if order.delivery_method == "kurier" else "Odbiór osobisty" }}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">Płatność</div>
+      <div class="card-body">
+        {{ "BLIK" if order.payment_method == "blik" else "Przy odbiorze" }}
+      </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">Produkty</div>
+      <ul class="list-group list-group-flush">
+        {% for item in order.items %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ item.product.name }} × {{ item.quantity }}</span>
+          <span class="fw-bold">{{ "%.2f"|format(item.price * item.quantity) }} zł</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card shadow-sm mb-4 text-end p-3">
+      <h4>Razem: <span class="text-success">{{ "%.2f"|format(order.total) }} zł</span></h4>
+    </div>
+    {% if session.get("role") == "admin" %}
+    <div class="text-center">
+      <a href="{{ url_for('main.orders') }}" class="btn btn-dark">
+          🔙 Wszystkie zamówienia
+      </a>
+    </div>
+    {% elif session.get("role") == "user" %}
+    <div class="text-center">
+      <a href="{{ url_for('main.orders') }}" class="btn btn-dark">
+          🔙 Moje zamówienia
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

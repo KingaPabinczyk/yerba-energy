@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center my-4">
+  <h3 class="fw-bold">
+  {% if session.get("role") == "admin" %}
+    📦 Wszystkie zamówienia
+  {% else %}
+    📦 Moje zamówienia
+  {% endif %}
+</h3>
+
+</div>
+
+{% if orders %}
+<div class="table-responsive shadow-sm rounded">
+  <table class="table align-middle bg-white border">
+    <thead class="table-dark">
+      <tr>
+        {% if session.get("role") == "admin" %}
+        <th>#</th>
+        <th>Dane klienta</th>
+        {% endif %}
+        <th>Data</th>
+        <th>Status</th>
+        <th>Płatność</th>
+        <th>Dostawa</th>
+        <th>Suma</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr>
+        {% if session.get("role") == "admin" %}
+        <td class="fw-bold">#{{ order.id }}</td>
+        <td>
+          {% if order.user %}
+            {{ order.user.first_name }} {{ order.user.last_name }}
+          {% else %}
+            {{ order.first_name }} {{ order.last_name }}
+          {% endif %}
+        </td>
+        {% endif %}
+        <td>{{ order.created_at.strftime("%Y-%m-%d %H:%M") if order.created_at else "–" }}</td>
+        <td>
+          {% if order.status == "Zapłacone - w realizacji" %}
+            <span class="badge bg-success">Zapłacone - w realizacji</span>
+          {% elif order.status == "w realizacji" %}
+            <span class="badge bg-warning text-dark">W realizacji</span>
+          {% else %}
+            <span class="badge bg-secondary">{{ order.status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if order.payment_method == "odbior" %}
+            Przy odbiorze
+          {% elif order.payment_method == "blik" %}
+            BLIK
+          {% else %}
+            {{ order.payment_method }}
+          {% endif %}
+        </td>
+        <td>
+          {% if order.delivery_method == "odbior" %}
+            Odbiór osobisty
+          {% elif order.delivery_method == "kurier" %}
+            Kurier
+          {% else %}
+            {{ order.delivery_method }}
+          {% endif %}
+        </td>
+        <td class="fw-bold text-success">{{ "%.2f"|format(order.total) }} zł</td>
+        <td>
+          <a href="{{ url_for('main.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-dark">
+            🔍 Szczegóły
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted text-center">Brak zamówień.</p>
+{% endif %}
+{% endblock %}

@@ -13,7 +13,7 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
-    migrate.init_app(app, db)   # <- dodane
+    migrate.init_app(app, db)   
 
     from .routes import bp
     app.register_blueprint(bp)
@@ -21,7 +21,6 @@ def create_app():
     with app.app_context():
         from .models import User
         db.create_all()
-        # jeśli nie ma admina -> utwórz
         if not User.query.filter_by(username="admin").first():
             admin = User(
                 username="admin",
