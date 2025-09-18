@@ -53,7 +53,9 @@ docker run -p 5000:5000 mini-shop
 
 http://127.0.0.1:5000
 
-Struktura projektu
+---
+
+## Struktura projektu
 
 -app/
 -- static/ # pliki statyczne (obrazy)
